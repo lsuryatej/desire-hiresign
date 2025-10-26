@@ -99,20 +99,26 @@ jobs:
         working-directory: ./mobile
         run: npm ci
       
-      - name: Lint
+      - name: Check for source files
         working-directory: ./mobile
+        id: check_files
         run: |
-          if [ -n "$(find src -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' 2>/dev/null)" ]; then
-            npm run lint
+          if [ -n "$(find src -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' 2>/dev/null | head -1)" ]; then
+            echo "files_exist=true" >> $GITHUB_OUTPUT
           else
-            echo "No TypeScript/JavaScript files to lint, skipping..."
+            echo "files_exist=false" >> $GITHUB_OUTPUT
           fi
       
-      - name: Type check
+      - name: Lint
+        if: steps.check_files.outputs.files_exist == 'true'
         working-directory: ./mobile
-        run: |
-          if [ -n "$(find src -name '*.ts' -o -name '*.tsx' 2>/dev/null)" ]; then
-            npx tsc --noEmit
-          else
-            echo "No TypeScript files to type-check, skipping..."
-          fi
+        run: npm run lint
+      
+      - name: Type check
+        if: steps.check_files.outputs.files_exist == 'true'
+        working-directory: ./mobile
+        run: npx tsc --noEmit
+      
+      - name: Skip lint (no files)
+        if: steps.check_files.outputs.files_exist == 'false'
+        run: echo "No TypeScript/JavaScript files found, skipping lint and type-check..."

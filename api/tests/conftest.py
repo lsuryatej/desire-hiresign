@@ -1,4 +1,5 @@
 """Pytest configuration and fixtures."""
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -23,10 +24,10 @@ def db_session():
     """Create a fresh database session for each test."""
     # Create all tables
     Base.metadata.create_all(bind=engine)
-    
+
     # Create a session
     db = TestingSessionLocal()
-    
+
     try:
         yield db
     finally:
@@ -46,17 +47,16 @@ def client(db_session):
     """Create a test client with overridden database dependency."""
     from fastapi.testclient import TestClient
     from app.main import app
-    
+
     def override_get_db():
         try:
             yield db_session
         finally:
             pass
-    
+
     app.dependency_overrides[get_db] = override_get_db
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
-    app.dependency_overrides.clear()
 
+    app.dependency_overrides.clear()
