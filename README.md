@@ -1,147 +1,180 @@
-# DesignHire - Tinder-Style Designer Marketplace
+# DesignHire API
 
-A two-sided marketplace connecting designers with hirers through a swipe-to-discover interface and job listing platform.
+A Tinder-style marketplace API for connecting designers with hirers.
 
-## Architecture
+## 🚀 Status
 
-- **Mobile App**: React Native (iOS & Android)
-- **Backend API**: FastAPI (Python)
-- **Database**: PostgreSQL
-- **Cache/Queue**: Redis + RQ
-- **Media Storage**: MinIO (S3-compatible)
-- **Admin Panel**: React (web)
+**Current Status:** Sprint 3 Complete, CI/CD Setup ✅
 
-## Quick Start
+All code has been formatted with black, linted, and is ready for production.
+
+## 📊 Features Implemented
+
+### Sprint 1 - Foundation ✅
+- ✅ Authentication with JWT tokens
+- ✅ User signup/login/refresh
+- ✅ Password hashing with bcrypt
+- ✅ Role-based access control (designer, hirer, admin)
+- ✅ Profile CRUD operations
+- ✅ File upload with presigned URLs (S3/MinIO)
+
+### Sprint 2 - Listings ✅  
+- ✅ Listings model with all fields
+- ✅ Advanced filtering (skills, location, salary range)
+- ✅ Role-based access (only hirers create)
+- ✅ Background worker for thumbnails
+- ✅ Media safety validation
+
+### Sprint 3 - Swipe Feed & Interactions ✅
+- ✅ Interactions system (like/skip/apply)
+- ✅ Duplicate prevention (24-hour window)
+- ✅ Profile feed endpoint for swiping
+- ✅ Interaction statistics
+- ✅ Prevent self-interactions
+
+## 🗄️ Database Schema
+
+### Tables
+- `users` - User accounts
+- `profiles` - Designer profiles  
+- `listings` - Job postings
+- `interactions` - User actions (likes/skips/applies)
+
+## 🔗 API Endpoints
+
+See full documentation at: http://localhost:8000/docs
+
+### Authentication
+- `POST /auth/signup` - Create account
+- `POST /auth/login` - Login
+- `POST /auth/refresh` - Refresh token
+- `GET /auth/me` - Get current user
+
+### Profiles
+- `POST /profiles` - Create profile
+- `GET /profiles/me` - Get my profile
+- `GET /profiles/{id}` - Get profile
+- `GET /profiles/feed` - Swipe feed
+- `PUT /profiles/me` - Update profile
+- `DELETE /profiles/me` - Delete profile
+
+### Listings
+- `POST /listings` - Create listing (hirers only)
+- `GET /listings` - Get listings with filters
+- `GET /listings/{id}` - Get specific listing
+- `GET /listings/my-listings` - Get my listings
+- `PUT /listings/{id}` - Update listing
+- `DELETE /listings/{id}` - Delete listing
+
+### Interactions
+- `POST /interactions` - Create interaction (like/skip/apply)
+- `GET /interactions` - List my interactions
+- `GET /interactions/stats` - Interaction statistics
+
+### Media
+- `POST /media/signed-url` - Get upload URL
+- `POST /media/delete` - Delete file
+- `POST /media/process` - Process image (thumbnail)
+
+## 🏃 Quick Start
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+ (for mobile app)
-- Python 3.11+ (for API)
+- Python 3.11+
+- PostgreSQL
+- Redis
+- MinIO (S3-compatible storage)
 
-### 1. Start Infrastructure
+### Setup
 
+1. **Clone the repository**
 ```bash
-docker-compose -f infra/docker-compose.yml up -d
+git clone https://github.com/lsuryatej/desire-hiresign.git
+cd desire-hiresign
 ```
 
-This starts:
-- PostgreSQL (port 5432)
-- Redis (port 6379)
-- MinIO (port 9000, UI: 9001)
-- Adminer (port 8080)
+2. **Set up infrastructure**
+```bash
+./scripts/start-infra.sh  # Start PostgreSQL, Redis, MinIO
+```
 
-### 2. Setup API
-
+3. **Set up API**
 ```bash
 cd api
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -e .
+source venv/bin/activate
+pip install -e ".[dev]"
+```
+
+4. **Configure environment**
+```bash
+cp env.example .env
+# Edit .env with your settings
+```
+
+5. **Run migrations**
+```bash
 alembic upgrade head
-python scripts/seed.py  # Optional: add demo data
+```
+
+6. **Start the server**
+```bash
 uvicorn app.main:app --reload
 ```
 
-API runs on http://localhost:8000
-- Docs: http://localhost:8000/docs
-
-### 3. Setup Mobile App
-
-```bash
-cd mobile
-npm install
-npm run ios  # or npm run android
-```
-
-### 4. Access Services
-
+7. **Access API**
 - API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-- Adminer: http://localhost:8080 (user: postgres, pass: password, db: app)
-- MinIO Console: http://localhost:9001 (user: minio, pass: minio123)
+- Docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health
 
-## Environment Variables
+## 🧪 Testing
 
-Copy `.env.example` to `.env` in each service and configure:
-
+### Run tests
 ```bash
-# API (.env)
-POSTGRES_URL=postgresql://postgres:password@localhost:5432/app
-REDIS_URL=redis://localhost:6379/0
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_ACCESS_KEY=minio
-MINIO_SECRET_KEY=minio123
-JWT_SECRET=your-secret-key-here-change-in-production
+cd api
+pytest
 ```
 
-## Development Workflow
-
-1. Create feature branch: `git checkout -b task/describe-feature`
-2. Make changes and test locally
-3. Write/update tests
-4. Run tests: `cd api && pytest`
-5. Commit with clear message: `[TASK] Title - Description`
-6. Push and create PR
-7. Run E2E tests before merging
-
-## Testing
-
+### Run linters
 ```bash
-# API unit tests
-cd api && pytest
-
-# E2E tests (when implemented)
-npm run test:e2e
-
-# Linting
-cd api && flake8 app tests
-cd mobile && npm run lint
+flake8 app tests
+black --check app tests
 ```
 
-## Project Structure
+## 📝 Development
 
-```
-/
-├── api/                # FastAPI backend
-│   ├── app/
-│   ├── alembic/       # Database migrations
-│   └── tests/         # Test suite
-├── mobile/            # React Native app
-│   ├── src/
-│   │   ├── design/    # Design system tokens
-│   │   └── screens/
-│   └── __tests__/
-├── admin/             # Admin web panel
-├── infra/             # Docker compose & infra configs
-├── scripts/           # Seed data & utilities
-└── .github/           # CI/CD workflows
-```
+### Code Style
+- Python: Black, flake8
+- TypeScript: ESLint
+- Format with `black .` before committing
 
-## Design System
+### Git Workflow
+- Main branch: Production-ready code
+- Feature branches for new features
+- All code must pass CI/CD checks
 
-We follow a minimalist, low-strain design system across all platforms:
+## 🤝 Contributing
 
-- **Colors**: Muted, calm palette (#F6F7F9 background, #3B82F6 primary)
-- **Typography**: Inter font, 14-28px scale
-- **Spacing**: 8px base unit (8, 16, 24, 32px)
-- **Components**: Cards, forms, chat with consistent styling
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for full specifications.
+## 📚 Documentation
 
-## Sprint Progress
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Development guide
+- [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md) - UI/UX guidelines
+- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing instructions
+- [FINAL_STATUS.md](FINAL_STATUS.md) - Project status
 
-- [x] Sprint 0: Repo setup & infrastructure
-- [ ] Sprint 1: Auth & Profiles
-- [ ] Sprint 2: Listings & Media
-- [ ] Sprint 3: Swipe Feed & Interactions
-- [ ] Sprint 4: Matches & Messaging
-- [ ] Sprint 5: Admin & Moderation
-- [ ] Sprint 6: Search & Onboarding
-- [ ] Sprint 7: Payments & Boosts
-- [ ] Sprint 8: Testing & Monitoring
-- [ ] Sprint 9: Ranking & Analytics
-- [ ] Sprint 10: Polish & Launch Prep
+## 🎯 Next Steps
 
-## License
+**Sprint 4 - Matches & Messaging**
+- Match detection logic
+- Matches table
+- Messaging system
+- WebSocket for real-time
 
-Proprietary - All Rights Reserved
+## ✅ CI/CD Status
+
+[![CI](https://github.com/lsuryatej/desire-hiresign/actions/workflows/ci.yml/badge.svg)](https://github.com/lsuryatej/desire-hiresign/actions/workflows/ci.yml)
+
+## 📄 License
+
+Copyright © 2025 DesignHire
