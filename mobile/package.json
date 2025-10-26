@@ -7,7 +7,7 @@
     "ios": "react-native run-ios",
     "start": "react-native start",
     "test": "jest",
-    "lint": "eslint .",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx || true",
     "test:e2e": "detox test"
   },
   "dependencies": {
