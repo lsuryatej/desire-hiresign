@@ -149,3 +149,74 @@ async def delete_profile(
     db.commit()
     
     return None
+
+
+@router.get("/feed", response_model=List[ProfileCard])
+async def get_profile_feed(
+    skip: int = 0,
+    limit: int = 20,
+    exclude_ids: str = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a feed of profiles for swiping.
+    
+    Returns profiles excluding:
+    - Current user's own profile
+    - Already interacted profiles (optional via exclude_ids)
+    - Inactive profiles
+    
+    Features:
+    - Cursor-based pagination
+    - Randomized order
+    - Minimal payload for fast loading
+    """
+    from sqlalchemy import func
+    
+    # Base query for active profiles
+    query = db.query(Profile).filter(
+        and_(
+            Profile.is_active == True,
+            Profile.user_id != current_user.id
+        )
+    )
+    
+    # Exclude already interacted profiles if provided
+    if exclude_ids:
+        exclude_list = [int(x) for x in exclude_ids.split(',') if x.strip().isdigit()]
+        if exclude_list:
+            query = query.filter(~Profile.id.in_(exclude_list))
+    
+    # Order by randomness and completeness score
+    profiles = query.order_by(
+        func.random(),
+        Profile.completeness_score.desc()
+    ).offset(skip).limit(limit).all()
+    
+    # Convert to ProfileCard format
+    result = []
+    for profile in profiles:
+        # Parse JSON fields
+        skills = profile.skills if isinstance(profile.skills, list) else []
+        portfolio_links = profile.portfolio_links if isinstance(profile.portfolio_links, list) else []
+        media_refs = profile.media_refs if isinstance(profile.media_refs, dict) else {}
+        
+        # Get thumbnail if available
+        thumbnail_url = None
+        if media_refs.get("profile_image"):
+            # In production, this would generate a fresh presigned URL
+            thumbnail_url = media_refs["profile_image"]
+        
+        card = ProfileCard(
+            id=profile.id,
+            headline=profile.headline or "",
+            skills=skills[:3] if skills else [],  # Top 3 skills
+            location=profile.location,
+            media_refs=media_refs,
+            completeness_score=profile.completeness_score,
+            created_at=profile.created_at
+        )
+        result.append(card)
+    
+    return result

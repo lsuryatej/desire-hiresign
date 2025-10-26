@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, profiles, media, listings
+from app.routers import auth, profiles, media, listings, interactions
 
 app = FastAPI(
     title="DesignHire API",
@@ -25,6 +25,7 @@ app.include_router(auth.router)
 app.include_router(profiles.router)
 app.include_router(media.router)
 app.include_router(listings.router)
+app.include_router(interactions.router)
 
 
 @app.get("/health")

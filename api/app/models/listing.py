@@ -55,7 +55,7 @@ class Listing(Base):
     
     # Relationships
     user = relationship("User", back_populates="listings")
-    # interactions = relationship("Interaction", back_populates="listing", cascade="all, delete-orphan")  # TODO: Add when interactions model is created
+    # interactions handled dynamically based on target_type and target_id
     
     def __repr__(self):
         return f"<Listing {self.id}: {self.title}>"
