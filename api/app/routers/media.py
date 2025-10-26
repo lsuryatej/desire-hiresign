@@ -19,6 +19,10 @@ from app.schemas.media import (
     SignedUrlResponse,
     DeleteFileRequest
 )
+from app.worker import task_queue
+
+# Import tasks to make them available
+from app.tasks import media as media_tasks
 
 router = APIRouter(prefix="/media", tags=["media"])
 
@@ -182,3 +186,57 @@ async def get_file_url_endpoint(
         "object_key": object_key,
         "expires_in": 3600
     }
+
+
+@router.post("/process", status_code=status.HTTP_202_ACCEPTED)
+async def process_image(
+    object_key: str,
+    profile_id: int = None,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Process an uploaded image (generate thumbnail, validate safety).
+    
+    This endpoint enqueues a background job to:
+    1. Generate a thumbnail for the image
+    2. Validate media safety
+    3. Update profile if profile_id provided
+    """
+    # Verify ownership
+    parts = object_key.split('/')
+    if len(parts) >= 2:
+        file_user_id = int(parts[1])
+        if file_user_id != current_user.id and current_user.role != 'admin':
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to process this file"
+            )
+    
+    # Enqueue processing job
+    try:
+        # Check if file is an image by extension
+        file_ext = object_key.split('.')[-1].lower()
+        if file_ext not in ['jpg', 'jpeg', 'png', 'gif', 'webp']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only images can be processed for thumbnails"
+            )
+        
+        job = task_queue.enqueue(
+            media_tasks.process_image_upload,
+            object_key,
+            update_profile=profile_id
+        )
+        
+        return {
+            "message": "Image processing job enqueued",
+            "job_id": job.id,
+            "object_key": object_key,
+            "status": "pending"
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to enqueue processing job: {str(e)}"
+        )
