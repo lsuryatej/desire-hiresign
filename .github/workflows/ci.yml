@@ -88,7 +88,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Check for source files
+        id: check_files
+        working-directory: ./mobile
+        run: |
+          if [ -n "$(find src -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' 2>/dev/null | head -1)" ]; then
+            echo "files_exist=true" >> $GITHUB_OUTPUT
+          else
+            echo "files_exist=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Skip (no mobile source files)
+        if: steps.check_files.outputs.files_exist == 'false'
+        run: echo "No TypeScript/JavaScript files found in mobile/src, skipping lint-mobile job..."
+      
       - name: Setup Node.js
+        if: steps.check_files.outputs.files_exist == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -96,18 +111,9 @@ jobs:
           cache-dependency-path: mobile/package.json
       
       - name: Install dependencies
+        if: steps.check_files.outputs.files_exist == 'true'
         working-directory: ./mobile
         run: npm ci
-      
-      - name: Check for source files
-        working-directory: ./mobile
-        id: check_files
-        run: |
-          if [ -n "$(find src -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' 2>/dev/null | head -1)" ]; then
-            echo "files_exist=true" >> $GITHUB_OUTPUT
-          else
-            echo "files_exist=false" >> $GITHUB_OUTPUT
-          fi
       
       - name: Lint
         if: steps.check_files.outputs.files_exist == 'true'
@@ -118,7 +124,3 @@ jobs:
         if: steps.check_files.outputs.files_exist == 'true'
         working-directory: ./mobile
         run: npx tsc --noEmit
-      
-      - name: Skip lint (no files)
-        if: steps.check_files.outputs.files_exist == 'false'
-        run: echo "No TypeScript/JavaScript files found, skipping lint and type-check..."
