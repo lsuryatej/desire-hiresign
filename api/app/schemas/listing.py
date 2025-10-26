@@ -1,4 +1,5 @@
 """Listing schemas."""
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -8,12 +9,15 @@ from app.models.listing import ListingStatus
 
 class ListingBase(BaseModel):
     """Base listing schema."""
+
     title: str = Field(..., max_length=255, description="Job title")
     company: str = Field(..., max_length=255, description="Company name")
     description: str = Field(..., description="Job description")
     skills_required: List[str] = Field(..., description="Required skills")
     location: Optional[str] = Field(None, max_length=255, description="Job location")
-    remote_preference: Optional[str] = Field(None, pattern="^(remote|onsite|hybrid)$", description="Remote preference")
+    remote_preference: Optional[str] = Field(
+        None, pattern="^(remote|onsite|hybrid)$", description="Remote preference"
+    )
     salary_min: Optional[Decimal] = Field(None, ge=0, description="Minimum salary")
     salary_max: Optional[Decimal] = Field(None, ge=0, description="Maximum salary")
     hourly_rate: Optional[Decimal] = Field(None, ge=0, description="Hourly rate")
@@ -23,11 +27,13 @@ class ListingBase(BaseModel):
 
 class ListingCreate(ListingBase):
     """Schema for creating a listing."""
+
     status: ListingStatus = ListingStatus.DRAFT
 
 
 class ListingUpdate(BaseModel):
     """Schema for updating a listing."""
+
     title: Optional[str] = Field(None, max_length=255)
     company: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
@@ -44,6 +50,7 @@ class ListingUpdate(BaseModel):
 
 class ListingResponse(ListingBase):
     """Response schema for listing."""
+
     id: int
     user_id: int
     status: ListingStatus
@@ -53,13 +60,14 @@ class ListingResponse(ListingBase):
     flagged: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class ListingCard(BaseModel):
     """Minimal listing card for feed/list views."""
+
     id: int
     title: str
     company: str
@@ -71,13 +79,14 @@ class ListingCard(BaseModel):
     salary_max: Optional[Decimal]
     created_at: datetime
     is_boosted: bool
-    
+
     class Config:
         from_attributes = True
 
 
 class ListingFilter(BaseModel):
     """Schema for listing filters."""
+
     skills: Optional[List[str]] = None
     location: Optional[str] = None
     remote_preference: Optional[str] = None

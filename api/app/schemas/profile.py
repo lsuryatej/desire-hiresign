@@ -38,13 +38,14 @@ class ProfileResponse(ProfileBase):
     completeness_score: int
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
 
 class ProfileCard(BaseModel):
     """Minimal profile data for card feed"""
+
     id: int
     user_id: int
     headline: Optional[str]
@@ -53,6 +54,6 @@ class ProfileCard(BaseModel):
     location: Optional[str]
     thumbnail_url: Optional[str]
     availability: Optional[str]
-    
+
     class Config:
         from_attributes = True
