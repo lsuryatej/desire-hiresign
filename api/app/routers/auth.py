@@ -45,8 +45,8 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
     
     # Generate tokens
-    access_token = create_access_token(data={"sub": new_user.id})
-    refresh_token = create_refresh_token(data={"sub": new_user.id})
+    access_token = create_access_token(data={"sub": str(new_user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(new_user.id)})
     
     return TokenResponse(
         access_token=access_token,
@@ -74,8 +74,8 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
         )
     
     # Generate tokens
-    access_token = create_access_token(data={"sub": user.id})
-    refresh_token = create_refresh_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     return TokenResponse(
         access_token=access_token,
@@ -95,8 +95,8 @@ async def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_
             detail="Invalid refresh token"
         )
     
-    user_id: int = payload.get("sub")
-    user = db.query(User).filter(User.id == user_id).first()
+    user_id_str = payload.get("sub")
+    user = db.query(User).filter(User.id == int(user_id_str)).first()
     
     if not user or not user.is_active:
         raise HTTPException(
@@ -105,7 +105,7 @@ async def refresh_token(request: RefreshTokenRequest, db: Session = Depends(get_
         )
     
     # Generate new access token
-    access_token = create_access_token(data={"sub": user.id})
+    access_token = create_access_token(data={"sub": str(user.id)})
     
     return TokenResponse(
         access_token=access_token,

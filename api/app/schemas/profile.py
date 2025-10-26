@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
@@ -10,7 +10,7 @@ class ProfileBase(BaseModel):
     portfolio_links: List[Dict[str, str]] = []
     availability: Optional[str] = None
     hourly_rate: Optional[float] = None
-    media_refs: Dict[str, any] = {}
+    media_refs: Dict[str, Any] = {}
     location: Optional[str] = None
     remote_preference: Optional[str] = None
 
@@ -26,7 +26,7 @@ class ProfileUpdate(BaseModel):
     portfolio_links: Optional[List[Dict[str, str]]] = None
     availability: Optional[str] = None
     hourly_rate: Optional[float] = None
-    media_refs: Optional[Dict[str, any]] = None
+    media_refs: Optional[Dict[str, Any]] = None
     location: Optional[str] = None
     remote_preference: Optional[str] = None
 
