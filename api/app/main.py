@@ -2,7 +2,17 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.routers import auth, profiles, media, listings, interactions, matches, messages, reports, admin
+from app.routers import (
+    auth,
+    profiles,
+    media,
+    listings,
+    interactions,
+    matches,
+    messages,
+    reports,
+    admin,
+)
 
 app = FastAPI(
     title="DesignHire API",
