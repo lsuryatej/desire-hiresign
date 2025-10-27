@@ -5,6 +5,7 @@ from app.models.interaction import Interaction, InteractionType
 from app.models.match import Match
 from app.models.message import Message
 from app.models.report import Report, ReportStatus, ReportType
+from app.models.payment import Payment, PaymentStatus, PaymentType
 
 __all__ = [
     "User",
@@ -19,4 +20,7 @@ __all__ = [
     "Report",
     "ReportStatus",
     "ReportType",
+    "Payment",
+    "PaymentStatus",
+    "PaymentType",
 ]

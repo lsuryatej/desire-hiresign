@@ -12,6 +12,7 @@ from app.routers import (
     messages,
     reports,
     admin,
+    payments,
 )
 
 app = FastAPI(
@@ -40,6 +41,7 @@ app.include_router(matches.router)
 app.include_router(messages.router)
 app.include_router(reports.router)
 app.include_router(admin.router)
+app.include_router(payments.router)
 
 
 @app.get("/health")
