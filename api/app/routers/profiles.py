@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
-from typing import List
+from sqlalchemy import and_, or_
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.auth import get_current_active_user
@@ -201,6 +201,168 @@ async def get_profile_feed(
             id=profile.id,
             headline=profile.headline or "",
             skills=skills[:3] if skills else [],  # Top 3 skills
+            location=profile.location,
+            media_refs=media_refs,
+            completeness_score=profile.completeness_score,
+            created_at=profile.created_at,
+        )
+        result.append(card)
+
+    return result
+
+
+@router.get("/onboarding/next-steps")
+async def get_onboarding_next_steps(
+    current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
+):
+    """Get next steps for profile completion."""
+    profile = db.query(Profile).filter(Profile.user_id == current_user.id).first()
+
+    if not profile:
+        return {
+            "completeness_score": 0,
+            "next_steps": [
+                "Add a headline",
+                "Write a bio",
+                "Add your skills",
+                "Upload a profile picture",
+                "Add portfolio links",
+                "Set your availability",
+                "Add your location",
+                "Set your hourly rate",
+                "Upload gallery images",
+            ],
+        }
+
+    required_fields = [
+        ("headline", "Add a headline"),
+        ("bio", "Write a bio"),
+        ("skills", "Add your skills"),
+        ("portfolio_links", "Add portfolio links"),
+        ("availability", "Set your availability"),
+        ("location", "Add your location"),
+        ("hourly_rate", "Set your hourly rate"),
+        ("profile_image", "Upload a profile picture"),
+        ("gallery", "Upload gallery images"),
+    ]
+
+    next_steps = []
+
+    # Check headline
+    if not profile.headline:
+        next_steps.append("Add a headline")
+
+    # Check bio
+    if not profile.bio:
+        next_steps.append("Write a bio")
+
+    # Check skills
+    if not profile.skills or len(profile.skills) == 0:
+        next_steps.append("Add your skills")
+
+    # Check portfolio links
+    if not profile.portfolio_links or len(profile.portfolio_links) == 0:
+        next_steps.append("Add portfolio links")
+
+    # Check availability
+    if not profile.availability:
+        next_steps.append("Set your availability")
+
+    # Check location
+    if not profile.location:
+        next_steps.append("Add your location")
+
+    # Check hourly rate
+    if profile.hourly_rate is None:
+        next_steps.append("Set your hourly rate")
+
+    # Check profile image
+    if not profile.media_refs or not profile.media_refs.get("profile_image"):
+        next_steps.append("Upload a profile picture")
+
+    # Check gallery
+    if (
+        not profile.media_refs
+        or not profile.media_refs.get("gallery")
+        or len(profile.media_refs["gallery"]) == 0
+    ):
+        next_steps.append("Upload gallery images")
+
+    return {
+        "completeness_score": profile.completeness_score,
+        "next_steps": next_steps[:3],  # Return top 3 priority items
+    }
+
+
+@router.get("/search", response_model=List[ProfileCard])
+async def search_profiles(
+    q: Optional[str] = Query(None, description="Search query"),
+    skills: Optional[str] = Query(None, description="Comma-separated list of skills"),
+    location: Optional[str] = Query(None, description="Location filter"),
+    remote_preference: Optional[str] = Query(None, description="Remote preference"),
+    min_completeness: Optional[int] = Query(50, description="Minimum completeness score"),
+    skip: int = 0,
+    limit: int = 50,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Search profiles with filters."""
+    query = db.query(Profile).filter(Profile.is_active == True)
+
+    # Exclude current user
+    query = query.filter(Profile.user_id != current_user.id)
+
+    # Search query
+    if q:
+        search_pattern = f"%{q}%"
+        query = query.filter(
+            or_(
+                Profile.headline.ilike(search_pattern),
+                Profile.bio.ilike(search_pattern),
+                Profile.location.ilike(search_pattern),
+            )
+        )
+
+    # Skills filter
+    if skills:
+        skills_list = [s.strip().lower() for s in skills.split(",")]
+        # Filter profiles that have at least one matching skill
+        for skill in skills_list:
+            query = query.filter(
+                or_(
+                    Profile.skills.ilike(f'%"{skill}"%'),
+                    Profile.skills.ilike(f"%{skill}%"),
+                )
+            )
+
+    # Location filter
+    if location:
+        query = query.filter(Profile.location.ilike(f"%{location}%"))
+
+    # Remote preference filter
+    if remote_preference and remote_preference in ["remote", "onsite", "hybrid"]:
+        query = query.filter(Profile.remote_preference == remote_preference)
+
+    # Minimum completeness score
+    query = query.filter(Profile.completeness_score >= min_completeness)
+
+    # Order by completeness score descending
+    query = query.order_by(Profile.completeness_score.desc())
+
+    profiles = query.offset(skip).limit(limit).all()
+
+    result = []
+    for profile in profiles:
+        # Parse JSON fields
+        import json
+
+        skills = json.loads(profile.skills) if profile.skills else []
+        media_refs = json.loads(profile.media_refs) if profile.media_refs else {}
+
+        card = ProfileCard(
+            id=profile.id,
+            headline=profile.headline or "",
+            skills=skills[:3] if skills else [],
             location=profile.location,
             media_refs=media_refs,
             completeness_score=profile.completeness_score,
