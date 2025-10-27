@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.monitoring import MetricsMiddleware, get_metrics_summary
 from app.routers import (
     auth,
     profiles,
@@ -21,6 +22,9 @@ app = FastAPI(
     version="0.1.0",
     debug=settings.debug,
 )
+
+# Monitoring middleware (before other middleware)
+app.add_middleware(MetricsMiddleware)
 
 # CORS middleware
 app.add_middleware(
@@ -48,6 +52,12 @@ app.include_router(payments.router)
 async def health_check():
     """Health check endpoint."""
     return {"status": "ok", "service": "designhire-api"}
+
+
+@app.get("/metrics")
+async def metrics_endpoint():
+    """Get API metrics for monitoring."""
+    return get_metrics_summary()
 
 
 @app.get("/")
