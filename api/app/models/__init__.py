@@ -4,6 +4,7 @@ from app.models.listing import Listing, ListingStatus
 from app.models.interaction import Interaction, InteractionType
 from app.models.match import Match
 from app.models.message import Message
+from app.models.report import Report, ReportStatus, ReportType
 
 __all__ = [
     "User",
@@ -15,4 +16,7 @@ __all__ = [
     "InteractionType",
     "Match",
     "Message",
+    "Report",
+    "ReportStatus",
+    "ReportType",
 ]
