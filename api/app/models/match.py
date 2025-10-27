@@ -36,9 +36,7 @@ class Match(Base):
     # Relationships
     user1 = relationship("User", foreign_keys=[user1_id])
     user2 = relationship("User", foreign_keys=[user2_id])
-
-    # Composite unique constraint
-    __table_args__ = {"schema": "public"}
+    messages = relationship("Message", back_populates="match", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Match {self.id}: {self.user1_id} <-> {self.user2_id}>"

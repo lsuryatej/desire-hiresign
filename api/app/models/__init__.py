@@ -3,6 +3,7 @@ from app.models.profile import Profile
 from app.models.listing import Listing, ListingStatus
 from app.models.interaction import Interaction, InteractionType
 from app.models.match import Match
+from app.models.message import Message
 
 __all__ = [
     "User",
@@ -13,4 +14,5 @@ __all__ = [
     "Interaction",
     "InteractionType",
     "Match",
+    "Message",
 ]
