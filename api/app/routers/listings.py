@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from app.core.database import get_db
 from app.core.auth import get_current_active_user
+from app.core.moderation import should_auto_flag_listing
 from app.models.user import User
 from app.models.listing import Listing, ListingStatus
 from app.schemas.listing import (
@@ -76,6 +77,13 @@ async def create_listing(
         media_refs=serialize_json_field(listing_data.media_refs or {}),
         status=listing_data.status,
     )
+
+    # Auto-moderation: Check if listing should be flagged
+    should_flag, flag_reason = should_auto_flag_listing(new_listing)
+    if should_flag:
+        new_listing.flagged = True
+        new_listing.flag_reason = f"Auto-moderated: {flag_reason}"
+        new_listing.is_active = False  # Deactivate flagged listings
 
     db.add(new_listing)
     db.commit()
